@@ -1,2 +1,2 @@
-# convenience tool
+# ROMAJI conversion program
 
