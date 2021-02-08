@@ -27,20 +27,25 @@ based on https://github.com/windy6001/ROMAJI/
 
 #include "keys.h"
 #include "P6.h"
-#include "schedule.h"
-#include "mem.h"
 #include "conv.h"
 #include "romaji.h"
 
+
+// ****************************************************************************
+//      functions
+// ****************************************************************************
+static void convertKana2Katakana(char* buff);
+
+
+// ****************************************************************************
+//          ローマ字変換テーブル
+// ****************************************************************************
 struct _romaji_tbl {
     int num;
     char romaji[4];
     char keycode[7];
 };
 
-// ****************************************************************************
-//          ローマ字変換テーブル
-// ****************************************************************************
 static struct _romaji_tbl romaji_tbl[] = {
 
 {2,{ OSDK_L ,OSDK_L  ,0      ,0}, {"っ"}},	// っ        一番最初のデータは、「っ」でないといけない
@@ -308,7 +313,7 @@ static struct _romaji_tbl romaji_tbl[] = {
 
 {1,{ OSDK_MINUS       ,0  ,0 ,0}  	, {"ー"}},	//  -
 {1,{ OSDK_BACKSLASH   ,0  ,0 ,0}  	, {""}},	//  -
-{1,{ OSDK_Q           ,0  ,0 ,0}    , {"Ｑ"}},	// Q
+//{1,{ OSDK_Q           ,0  ,0 ,0}    , {"Ｑ"}},	// Q
 {1,{ OSDK_SEMICOLON   ,0  ,0 ,0}    , {"；"}},	// ;
 {1,{ OSDK_COLON       ,0  ,0 ,0}    , {"："}},	// :
 {1,{ OSDK_RIGHTBRACKET,0  ,0 ,0}  	, {""}},	//  ]
@@ -474,6 +479,7 @@ int convert_romaji2kana( int osdkeycode )
            {
             char tmp[10];
             convertSjis2p6( romaji_tbl[line].keycode, tmp);  // convert shift JIS -> P6 code
+            convertKana2Katakana( tmp);
             putAutokeyMessage( tmp);                         // register autokey
            }
 
@@ -507,3 +513,20 @@ int convert_romaji2kana( int osdkeycode )
     return found;
 }
 
+// ****************************************************************************
+//  カタカナが入力される状態だと、ひらがな→カタカナに変換する
+//      In: Out: buff バッファ 
+// ****************************************************************************
+void convertKana2Katakana(unsigned char* buff)
+{
+    unsigned char *p;
+    p= buff;
+    for (int i = 0; i< strlen(buff); i++) {
+        if (kanaMode && katakana) {
+            if ((0x86 <= *p && *p <= 0x9f) || (0xe0 <= *p && *p <= 0xfd)) {   // kana?
+                *p ^= 0x20;
+            }
+        p++;
+        }
+    }
+}
