@@ -1,4 +1,6 @@
 /*
+name is romaji.c
+
 Copyright (c) 2020 Windy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,326 +20,324 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+based on https://github.com/windy6001/ROMAJI/
 */
 
 
-/** iP6: PC-6000/6600 series emualtor ************************/
-/**          ÉçÅ[É}éöïœä∑                                   **/
-/**          name is romaji.c                               **/
-/**                                                         **/
-/**          by Windy                                       **/
-/*************************************************************/
 #include "keys.h"
 #include "P6.h"
 #include "schedule.h"
 #include "mem.h"
+#include "conv.h"
 #include "romaji.h"
 
 struct _romaji_tbl {
     int num;
     char romaji[4];
-    int  keycode[7];
+    char keycode[7];
 };
 
 // ****************************************************************************
-//          ÉçÅ[É}éöïœä∑ÉeÅ[ÉuÉã
+//          „É≠„Éº„ÉûÂ≠óÂ§âÊèõ„ÉÜ„Éº„Éñ„É´
 // ****************************************************************************
 static struct _romaji_tbl romaji_tbl[] = {
 
-{2,{ OSDK_L ,OSDK_L  ,0      ,0}, {SHIFT_DOWN , OSDK_Z , SHIFT_UP  ,0}},	// Ç¡        àÍî‘ç≈èâÇÃÉfÅ[É^ÇÕÅAÅuÇ¡ÅvÇ≈Ç»Ç¢Ç∆Ç¢ÇØÇ»Ç¢
-{3,{ OSDK_L ,OSDK_T  ,OSDK_U ,0}, {SHIFT_DOWN , OSDK_Z , SHIFT_UP  ,0}},	// Ç¡
+{2,{ OSDK_L ,OSDK_L  ,0      ,0}, {"„Å£"}},	// „Å£        ‰∏ÄÁï™ÊúÄÂàù„ÅÆ„Éá„Éº„Çø„ÅØ„ÄÅ„Äå„Å£„Äç„Åß„Å™„ÅÑ„Å®„ÅÑ„Åë„Å™„ÅÑ
+{3,{ OSDK_L ,OSDK_T  ,OSDK_U ,0}, {"„Å£"}},	// „Å£
 
-{1,{ OSDK_A , 0      , 0    ,0}, {OSDK_3 , 0,0,0}},		// Ç†Ç¢Ç§Ç¶Ç®
-{1,{ OSDK_I , 0      , 0    ,0}, {OSDK_E , 0,0,0}},
-{1,{ OSDK_U , 0      , 0    ,0}, {OSDK_4 , 0,0,0}},
-{1,{ OSDK_E , 0      , 0    ,0}, {OSDK_5 , 0,0,0}},
-{1,{ OSDK_O , 0      , 0    ,0}, {OSDK_6 , 0,0,0}},
-
-
-{2,{ OSDK_L ,OSDK_A  ,0      ,0}, {SHIFT_DOWN , OSDK_3 , SHIFT_UP  ,0}},	// Çü
-{2,{ OSDK_L ,OSDK_I  ,0      ,0}, {SHIFT_DOWN , OSDK_E , SHIFT_UP  ,0}},	// Ç°
-{2,{ OSDK_L ,OSDK_U  ,0      ,0}, {SHIFT_DOWN , OSDK_4 , SHIFT_UP  ,0}},	// Ç£
-{2,{ OSDK_L ,OSDK_E  ,0      ,0}, {SHIFT_DOWN , OSDK_5 , SHIFT_UP  ,0}},	// Ç•
-{2,{ OSDK_L ,OSDK_O  ,0      ,0}, {SHIFT_DOWN , OSDK_6 , SHIFT_UP  ,0}},	// Çß
+{1,{ OSDK_A , 0      , 0    ,0}, {"„ÅÇ" }},		// „ÅÇ„ÅÑ„ÅÜ„Åà„Åä
+{1,{ OSDK_I , 0      , 0    ,0}, {"„ÅÑ" }},
+{1,{ OSDK_U , 0      , 0    ,0}, {"„ÅÜ" }},
+{1,{ OSDK_E , 0      , 0    ,0}, {"„Åà" }},
+{1,{ OSDK_O , 0      , 0    ,0}, {"„Åä" }},
 
 
-{ 2,{ OSDK_X ,OSDK_A  ,0      ,0 },{ SHIFT_DOWN , OSDK_3 , SHIFT_UP  ,0 } },	// Çü
-{ 2,{ OSDK_X ,OSDK_I  ,0      ,0 },{ SHIFT_DOWN , OSDK_E , SHIFT_UP  ,0 } },	// Ç°
-{ 2,{ OSDK_X ,OSDK_U  ,0      ,0 },{ SHIFT_DOWN , OSDK_4 , SHIFT_UP  ,0 } },	// Ç£
-{ 2,{ OSDK_X ,OSDK_E  ,0      ,0 },{ SHIFT_DOWN , OSDK_5 , SHIFT_UP  ,0 } },	// Ç•
-{ 2,{ OSDK_X ,OSDK_O  ,0      ,0 },{ SHIFT_DOWN , OSDK_6 , SHIFT_UP  ,0 } },	// Çß
-
-{ 3,{ OSDK_W ,OSDK_H  ,OSDK_A ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_3,SHIFT_UP  ,0 } },	// Ç§Çü
-{ 3,{ OSDK_W ,OSDK_H  ,OSDK_I ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_E,SHIFT_UP  ,0 } },	// 
-{ 2,{ OSDK_W ,OSDK_I  ,0      ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_E,SHIFT_UP  ,0 } },	// 
-{ 2,{ OSDK_W ,OSDK_U  ,0      ,0 },{ OSDK_4 ,0         , 0     ,0 } },	// 
-{ 3,{ OSDK_W ,OSDK_H  ,OSDK_E ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_5,SHIFT_UP  ,0 } },	// 
-{ 2,{ OSDK_W ,OSDK_E  ,0      ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_5,SHIFT_UP  ,0 } },	// 
-{ 3,{ OSDK_W ,OSDK_H  ,OSDK_O ,0 },{ OSDK_4 ,SHIFT_DOWN, OSDK_6,SHIFT_UP  ,0 } },	// 
+{2,{ OSDK_L ,OSDK_A  ,0      ,0}, {"„ÅÅ"}},	// „ÅÅ
+{2,{ OSDK_L ,OSDK_I  ,0      ,0}, {"„ÅÉ"}},	// „ÅÉ
+{2,{ OSDK_L ,OSDK_U  ,0      ,0}, {"„ÅÖ"}},	// „ÅÖ
+{2,{ OSDK_L ,OSDK_E  ,0      ,0}, {"„Åá"}},	// „Åá
+{2,{ OSDK_L ,OSDK_O  ,0      ,0}, {"„Åâ"}},	// „Åâ
 
 
-{2,{ OSDK_K ,OSDK_A  , 0    ,0}, {OSDK_T , 0,0,0}},		// Ç©Ç´Ç≠ÇØÇ±
-{2,{ OSDK_K ,OSDK_I  , 0    ,0}, {OSDK_G , 0,0,0}},
-{2,{ OSDK_K ,OSDK_U  , 0    ,0}, {OSDK_H , 0,0,0}},
-{2,{ OSDK_K ,OSDK_E  , 0    ,0}, {OSDK_COLON , 0,0,0}},
-{2,{ OSDK_K ,OSDK_O  , 0    ,0}, {OSDK_B , 0,0,0}},
+{ 2,{ OSDK_X ,OSDK_A  ,0      ,0 },{"„ÅÅ"} },	// „ÅÅ
+{ 2,{ OSDK_X ,OSDK_I  ,0      ,0 },{"„ÅÉ"} },	// „ÅÉ
+{ 2,{ OSDK_X ,OSDK_U  ,0      ,0 },{"„ÅÖ"} },	// „ÅÖ
+{ 2,{ OSDK_X ,OSDK_E  ,0      ,0 },{"„Åá"} },	// „Åá
+{ 2,{ OSDK_X ,OSDK_O  ,0      ,0 },{"„Åâ"} },	// „Åâ
 
-{3,{ OSDK_K ,OSDK_Y  ,OSDK_A ,0}, {OSDK_G , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç´Ç·Ç´Ç°Ç´Ç„Ç´Ç•Ç´ÇÂ
-{3,{ OSDK_K ,OSDK_Y  ,OSDK_I ,0}, {OSDK_G , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_K ,OSDK_Y  ,OSDK_U ,0}, {OSDK_G , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_K ,OSDK_Y  ,OSDK_E ,0}, {OSDK_G , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_K ,OSDK_Y  ,OSDK_O ,0}, {OSDK_G , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{2,{ OSDK_G ,OSDK_A  ,0      ,0}, {OSDK_T , OSDK_AT    , 0      , 0       }},	// Ç™Ç¨ÇÆÇ∞Ç≤
-{2,{ OSDK_G ,OSDK_I  ,0      ,0}, {OSDK_G , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_G ,OSDK_U  ,0      ,0}, {OSDK_H , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_G ,OSDK_E  ,0      ,0}, {OSDK_COLON , OSDK_AT, 0      , 0       }},
-{2,{ OSDK_G ,OSDK_O  ,0      ,0}, {OSDK_B , OSDK_AT    , 0      , 0       }},
-
-{3,{ OSDK_G ,OSDK_Y  ,OSDK_A ,0}, {OSDK_G , OSDK_AT, SHIFT_DOWN, OSDK_7,SHIFT_UP}},// Ç¨Ç·Ç¨Ç°Ç¨Ç„Ç¨Ç•Ç¨ÇÂ
-{3,{ OSDK_G ,OSDK_Y  ,OSDK_I ,0}, {OSDK_G , OSDK_AT, SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_Y  ,OSDK_U ,0}, {OSDK_G , OSDK_AT, SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_Y  ,OSDK_E ,0}, {OSDK_G , OSDK_AT, SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_Y  ,OSDK_O ,0}, {OSDK_G , OSDK_AT, SHIFT_DOWN, OSDK_9,SHIFT_UP}},
-
-{3,{ OSDK_G ,OSDK_W  ,OSDK_A ,0}, {OSDK_H , OSDK_AT, SHIFT_DOWN, OSDK_3,SHIFT_UP}},// ÇÆÇüÇÆÇ°ÇÆÇ£ÇÆÇ•ÇÆÇß
-{3,{ OSDK_G ,OSDK_W  ,OSDK_I ,0}, {OSDK_H , OSDK_AT, SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_W  ,OSDK_U ,0}, {OSDK_H , OSDK_AT, SHIFT_DOWN, OSDK_4,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_W  ,OSDK_E ,0}, {OSDK_H , OSDK_AT, SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_G ,OSDK_W  ,OSDK_O ,0}, {OSDK_H , OSDK_AT, SHIFT_DOWN, OSDK_6,SHIFT_UP}},
-
-{2,{ OSDK_S ,OSDK_A  , 0    ,0}, {OSDK_X , 0,0,0}},		// Ç≥ÇµÇ∑ÇπÇª
-{2,{ OSDK_S ,OSDK_I  , 0    ,0}, {OSDK_D , 0,0,0}},
-{2,{ OSDK_S ,OSDK_U  , 0    ,0}, {OSDK_R , 0,0,0}},
-{2,{ OSDK_S ,OSDK_E  , 0    ,0}, {OSDK_P , 0,0,0}},
-{2,{ OSDK_S ,OSDK_O  , 0    ,0}, {OSDK_C , 0,0,0}},
-
-{3,{ OSDK_S ,OSDK_Y  ,OSDK_A ,0}, {OSDK_D , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// ÇµÇ·ÇµÇ°ÇµÇ„ÇµÇ•ÇµÇÂ
-{3,{ OSDK_S ,OSDK_Y  ,OSDK_I ,0}, {OSDK_D , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_Y  ,OSDK_U ,0}, {OSDK_D , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_Y  ,OSDK_E ,0}, {OSDK_D , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_Y  ,OSDK_O ,0}, {OSDK_D , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{3,{ OSDK_S ,OSDK_H  ,OSDK_A ,0}, {OSDK_D , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// ÇµÇ·ÇµÇ°Å@ÇµÇ•ÇµÇÂ
-{3,{ OSDK_S ,OSDK_H  ,OSDK_U ,0}, {OSDK_D , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_H  ,OSDK_E ,0}, {OSDK_D , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_H  ,OSDK_O ,0}, {OSDK_D , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{3,{ OSDK_S ,OSDK_W  ,OSDK_A ,0}, {OSDK_R , SHIFT_DOWN , OSDK_3 , SHIFT_UP}},	// Ç∑ÇüÇ∑Ç°Ç∑Ç£Ç∑Ç•Ç∑Çß
-{3,{ OSDK_S ,OSDK_W  ,OSDK_I ,0}, {OSDK_R , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_W  ,OSDK_U ,0}, {OSDK_R , SHIFT_DOWN , OSDK_4 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_W  ,OSDK_E ,0}, {OSDK_R , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_S ,OSDK_W  ,OSDK_O ,0}, {OSDK_R , SHIFT_DOWN , OSDK_6 , SHIFT_UP}},
-
-{2,{ OSDK_Z ,OSDK_A  ,0      ,0}, {OSDK_X , OSDK_AT    , 0      , 0       }},	// Ç¥Ç∂Ç∏Ç∫Çº
-{2,{ OSDK_Z ,OSDK_I  ,0      ,0}, {OSDK_D , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_J ,OSDK_I  ,0      ,0}, {OSDK_D , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_Z ,OSDK_U  ,0      ,0}, {OSDK_R , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_Z ,OSDK_E  ,0      ,0}, {OSDK_P , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_Z ,OSDK_O  ,0      ,0}, {OSDK_C , OSDK_AT    , 0      , 0       }},
-
-{3,{ OSDK_Z ,OSDK_Y  ,OSDK_A ,0}, {OSDK_D , OSDK_AT    , SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// Ç∂Ç·Ç∂Ç°Ç∂Ç„Ç∂Ç•Ç∂ÇÂ
-{3,{ OSDK_Z ,OSDK_Y  ,OSDK_I ,0}, {OSDK_D , OSDK_AT    , SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_Z ,OSDK_Y  ,OSDK_U ,0}, {OSDK_D , OSDK_AT    , SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_Z ,OSDK_Y  ,OSDK_E ,0}, {OSDK_D , OSDK_AT    , SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_Z ,OSDK_Y  ,OSDK_O ,0}, {OSDK_D , OSDK_AT    , SHIFT_DOWN, OSDK_9,SHIFT_UP}},
-
-{2,{ OSDK_J ,OSDK_A  ,0      ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç∂Ç·Ç∂Ç„Ç∂Ç•Ç∂ÇÂ
-{2,{ OSDK_J ,OSDK_U  ,0      ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{2,{ OSDK_J ,OSDK_E  ,0      ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{2,{ OSDK_J ,OSDK_O  ,0      ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{3,{ OSDK_J ,OSDK_Y  ,OSDK_A ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç∂Ç·Ç∂Ç°Ç∂Ç„Ç∂Ç•Ç∂ÇÂ
-{3,{ OSDK_J ,OSDK_Y  ,OSDK_I ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_J ,OSDK_Y  ,OSDK_U ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_J ,OSDK_Y  ,OSDK_E ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_J ,OSDK_Y  ,OSDK_O ,0}, {OSDK_D , OSDK_AT ,SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
+{ 3,{ OSDK_W ,OSDK_H  ,OSDK_A ,0 },{"„ÅÜ„ÅÅ"} },	// „ÅÜ„ÅÅ
+{ 3,{ OSDK_W ,OSDK_H  ,OSDK_I ,0 },{"„ÅÜ„ÅÉ"} },	// „ÅÜ„ÅÉ
+{ 2,{ OSDK_W ,OSDK_I  ,0      ,0 },{"„ÅÜ„ÅÉ"} },	// „ÅÜ„ÅÉ
+{ 2,{ OSDK_W ,OSDK_U  ,0      ,0 },{"„ÅÜ"  } },  // „ÅÜ
+{ 3,{ OSDK_W ,OSDK_H  ,OSDK_E ,0 },{"„ÅÜ„Åá"} },	// „ÅÜ„Åá
+{ 2,{ OSDK_W ,OSDK_E  ,0      ,0 },{"„ÅÜ„Åá"} },	// „ÅÜ„Åá
+{ 3,{ OSDK_W ,OSDK_H  ,OSDK_O ,0 },{"„ÅÜ„Åâ"} },	// „ÅÜ„Åâ
 
 
+{2,{ OSDK_K ,OSDK_A  , 0    ,0}, {"„Åã"}},		// „Åã„Åç„Åè„Åë„Åì
+{2,{ OSDK_K ,OSDK_I  , 0    ,0}, {"„Åç"}},
+{2,{ OSDK_K ,OSDK_U  , 0    ,0}, {"„Åè"}},
+{2,{ OSDK_K ,OSDK_E  , 0    ,0}, {"„Åë"}},
+{2,{ OSDK_K ,OSDK_O  , 0    ,0}, {"„Åì"}},
 
-{2,{ OSDK_T ,OSDK_A  , 0    ,0}, {OSDK_Q , 0,0,0}},		// ÇΩÇøÇ¬ÇƒÇ∆
-{2,{ OSDK_T ,OSDK_I  , 0    ,0}, {OSDK_A , 0,0,0}},
-{3,{ OSDK_C ,OSDK_H  ,OSDK_I,0}, {OSDK_A , 0,0,0}},
-{2,{ OSDK_C ,OSDK_I  , 0    ,0}, {OSDK_A , 0,0,0}},
-{2,{ OSDK_T ,OSDK_U  , 0    ,0}, {OSDK_Z , 0,0,0}},
-{3,{ OSDK_T ,OSDK_S  ,OSDK_U,0}, {OSDK_Z , 0,0,0}},
-{2,{ OSDK_T ,OSDK_E  , 0    ,0}, {OSDK_W , 0,0,0}},
-{2,{ OSDK_T ,OSDK_O  , 0    ,0}, {OSDK_S , 0,0,0}},
+{3,{ OSDK_K ,OSDK_Y  ,OSDK_A ,0}, {"„Åç„ÇÉ"}},	// „Åç„ÇÉ„Åç„ÅÉ„Åç„ÇÖ„Åç„Åá„Åç„Çá
+{3,{ OSDK_K ,OSDK_Y  ,OSDK_I ,0}, {"„Åç„ÅÉ"}},
+{3,{ OSDK_K ,OSDK_Y  ,OSDK_U ,0}, {"„Åç„ÇÖ"}},
+{3,{ OSDK_K ,OSDK_Y  ,OSDK_E ,0}, {"„Åç„Åá"}},
+{3,{ OSDK_K ,OSDK_Y  ,OSDK_O ,0}, {"„Åç„Çá"}},
 
-{3,{ OSDK_T ,OSDK_Y  ,OSDK_A  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// ÇøÇ·ÇøÇ°ÇøÇ„ÇøÇ•ÇøÇÂ
-{3,{ OSDK_T ,OSDK_Y  ,OSDK_I  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_Y  ,OSDK_U  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_Y  ,OSDK_E  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_Y  ,OSDK_O  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{2,{ OSDK_G ,OSDK_A  ,0      ,0}, {"„Åå"}},	// „Åå„Åé„Åê„Åí„Åî
+{2,{ OSDK_G ,OSDK_I  ,0      ,0}, {"„Åé"}},
+{2,{ OSDK_G ,OSDK_U  ,0      ,0}, {"„Åê"}},
+{2,{ OSDK_G ,OSDK_E  ,0      ,0}, {"„Åí"}},
+{2,{ OSDK_G ,OSDK_O  ,0      ,0}, {"„Åî"}},
 
-{3,{ OSDK_C ,OSDK_Y  ,OSDK_A  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// ÇøÇ·ÇøÇ°ÇøÇ„ÇøÇ•ÇøÇÂ
-{3,{ OSDK_C ,OSDK_Y  ,OSDK_I  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_C ,OSDK_Y  ,OSDK_U  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_C ,OSDK_Y  ,OSDK_E  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_C ,OSDK_Y  ,OSDK_O  ,0}, {OSDK_A ,SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{3,{ OSDK_G ,OSDK_Y  ,OSDK_A ,0}, {"„Åé„ÇÉ"}},// „Åé„ÇÉ„Åé„ÅÉ„Åé„ÇÖ„Åé„Åá„Åé„Çá
+{3,{ OSDK_G ,OSDK_Y  ,OSDK_I ,0}, {"„Åé„ÅÉ"}},
+{3,{ OSDK_G ,OSDK_Y  ,OSDK_U ,0}, {"„Åé„ÇÖ"}},
+{3,{ OSDK_G ,OSDK_Y  ,OSDK_E ,0}, {"„Åé„Åá"}},
+{3,{ OSDK_G ,OSDK_Y  ,OSDK_O ,0}, {"„Åé„Çá"}},
 
-{3,{ OSDK_T ,OSDK_S  ,OSDK_A  ,0}, {OSDK_Z ,SHIFT_DOWN, OSDK_3,SHIFT_UP}},	// Ç¬ÇüÇ¬Ç°Ç¬Ç•Ç¬Çß
-{3,{ OSDK_T ,OSDK_S  ,OSDK_I  ,0}, {OSDK_Z ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_S  ,OSDK_E  ,0}, {OSDK_Z ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_S  ,OSDK_O  ,0}, {OSDK_Z ,SHIFT_DOWN, OSDK_6,SHIFT_UP}},
+{3,{ OSDK_G ,OSDK_W  ,OSDK_A ,0}, {"„Åê„ÅÅ"}},// „Åê„ÅÅ„Åê„ÅÉ„Åê„ÅÖ„Åê„Åá„Åê„Åâ
+{3,{ OSDK_G ,OSDK_W  ,OSDK_I ,0}, {"„Åê„ÅÉ"}},
+{3,{ OSDK_G ,OSDK_W  ,OSDK_U ,0}, {"„Åê„ÅÖ"}},
+{3,{ OSDK_G ,OSDK_W  ,OSDK_E ,0}, {"„Åê„Åá"}},
+{3,{ OSDK_G ,OSDK_W  ,OSDK_O ,0}, {"„Åê„Åâ"}},
 
-{3,{ OSDK_T ,OSDK_H  ,OSDK_A  ,0}, {OSDK_W ,SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// ÇƒÇ·ÇƒÇ°ÇƒÇ„ÇƒÇ•ÇƒÇÂ
-{3,{ OSDK_T ,OSDK_H  ,OSDK_I  ,0}, {OSDK_W ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_H  ,OSDK_U  ,0}, {OSDK_W ,SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_H  ,OSDK_E  ,0}, {OSDK_W ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_H  ,OSDK_O  ,0}, {OSDK_W ,SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{2,{ OSDK_S ,OSDK_A  , 0     ,0}, {"„Åï"}},		// „Åï„Åó„Åô„Åõ„Åù
+{2,{ OSDK_S ,OSDK_I  , 0     ,0}, {"„Åó"}},
+{3,{ OSDK_S ,OSDK_H  ,OSDK_I ,0}, {"„Åó"}},
+{2,{ OSDK_S ,OSDK_U  , 0     ,0}, {"„Åô"}},
+{2,{ OSDK_S ,OSDK_E  , 0     ,0}, {"„Åõ"}},
+{2,{ OSDK_S ,OSDK_O  , 0     ,0}, {"„Åù"}},
 
-{3,{ OSDK_T ,OSDK_W  ,OSDK_A  ,0}, {OSDK_S ,SHIFT_DOWN, OSDK_3,SHIFT_UP}},	// Ç∆ÇüÇ∆Ç°Ç∆Ç£Ç∆Ç•Ç∆Çß
-{3,{ OSDK_T ,OSDK_W  ,OSDK_I  ,0}, {OSDK_S ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_W  ,OSDK_U  ,0}, {OSDK_S ,SHIFT_DOWN, OSDK_4,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_W  ,OSDK_E  ,0}, {OSDK_S ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_T ,OSDK_W  ,OSDK_O  ,0}, {OSDK_S ,SHIFT_DOWN, OSDK_6,SHIFT_UP}},
+{3,{ OSDK_S ,OSDK_Y  ,OSDK_A ,0}, {"„Åó„ÇÉ"}},	// „Åó„ÇÉ„Åó„ÅÉ„Åó„ÇÖ„Åó„Åá„Åó„Çá
+{3,{ OSDK_S ,OSDK_Y  ,OSDK_I ,0}, {"„Åó„ÅÉ"}},
+{3,{ OSDK_S ,OSDK_Y  ,OSDK_U ,0}, {"„Åó„ÇÖ"}},
+{3,{ OSDK_S ,OSDK_Y  ,OSDK_E ,0}, {"„Åó„Åá"}},
+{3,{ OSDK_S ,OSDK_Y  ,OSDK_O ,0}, {"„Åó„Çá"}},
 
-{2,{ OSDK_D ,OSDK_A  ,0      ,0}, {OSDK_Q , OSDK_AT    , 0      , 0       }},	// ÇæÇ¿Ç√Ç≈Ç«
-{2,{ OSDK_D ,OSDK_I  ,0      ,0}, {OSDK_A , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_D ,OSDK_U  ,0      ,0}, {OSDK_Z , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_D ,OSDK_E  ,0      ,0}, {OSDK_W , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_D ,OSDK_O  ,0      ,0}, {OSDK_S , OSDK_AT    , 0      , 0       }},
+{3,{ OSDK_S ,OSDK_H  ,OSDK_A ,0}, {"„Åó„ÇÉ"}},	// „Åó„ÇÉ„Åó„ÇÖ„ÄÄ„Åó„Åá„Åó„Çá
+{3,{ OSDK_S ,OSDK_H  ,OSDK_U ,0}, {"„Åó„ÇÖ"}},
+{3,{ OSDK_S ,OSDK_H  ,OSDK_E ,0}, {"„Åó„Åá"}},
+{3,{ OSDK_S ,OSDK_H  ,OSDK_O ,0}, {"„Åó„Çá"}},
 
-{3,{ OSDK_D ,OSDK_Y  ,OSDK_A  ,0}, {OSDK_A , OSDK_AT    ,SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// Ç¿Ç·Ç¿Ç°Ç¿Ç„Ç¿Ç•Ç¿ÇÂ
-{3,{ OSDK_D ,OSDK_Y  ,OSDK_I  ,0}, {OSDK_A , OSDK_AT    ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_D ,OSDK_Y  ,OSDK_U  ,0}, {OSDK_A , OSDK_AT    ,SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_D ,OSDK_Y  ,OSDK_E  ,0}, {OSDK_A , OSDK_AT    ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_D ,OSDK_Y  ,OSDK_O  ,0}, {OSDK_A , OSDK_AT    ,SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{3,{ OSDK_S ,OSDK_W  ,OSDK_A ,0}, {"„Åô„ÅÅ"}},	// „Åô„ÅÅ„Åô„ÅÉ„Åô„ÅÖ„Åô„Åá„Åô„Åâ
+{3,{ OSDK_S ,OSDK_W  ,OSDK_I ,0}, {"„Åô„ÅÉ"}},
+{3,{ OSDK_S ,OSDK_W  ,OSDK_U ,0}, {"„Åô„ÅÖ"}},
+{3,{ OSDK_S ,OSDK_W  ,OSDK_E ,0}, {"„Åô„Åá"}},
+{3,{ OSDK_S ,OSDK_W  ,OSDK_O ,0}, {"„Åô„Åâ"}},
+
+{2,{ OSDK_Z ,OSDK_A  ,0      ,0}, {"„Åñ"}},	// „Åñ„Åò„Åö„Åú„Åû
+{2,{ OSDK_Z ,OSDK_I  ,0      ,0}, {"„Åò"}},
+{2,{ OSDK_J ,OSDK_I  ,0      ,0}, {"„Åò"}},
+{2,{ OSDK_Z ,OSDK_U  ,0      ,0}, {"„Åö"}},
+{2,{ OSDK_Z ,OSDK_E  ,0      ,0}, {"„Åú"}},
+{2,{ OSDK_Z ,OSDK_O  ,0      ,0}, {"„Åû"}},
+
+{3,{ OSDK_Z ,OSDK_Y  ,OSDK_A ,0}, {"„Åò„ÇÉ"}},	// „Åò„ÇÉ„Åò„ÅÉ„Åò„ÇÖ„Åò„Åá„Åò„Çá
+{3,{ OSDK_Z ,OSDK_Y  ,OSDK_I ,0}, {"„Åò„ÅÉ"}},
+{3,{ OSDK_Z ,OSDK_Y  ,OSDK_U ,0}, {"„Åò„ÇÖ"}},
+{3,{ OSDK_Z ,OSDK_Y  ,OSDK_E ,0}, {"„Åò„Åá"}},
+{3,{ OSDK_Z ,OSDK_Y  ,OSDK_O ,0}, {"„Åò„Çá"}},
+
+{2,{ OSDK_J ,OSDK_A  ,0      ,0}, {"„Åò„ÇÉ"}},	// „Åò„ÇÉ„Åò„ÇÖ„Åò„Åá„Åò„Çá
+{2,{ OSDK_J ,OSDK_U  ,0      ,0}, {"„Åò„ÇÖ"}},
+{2,{ OSDK_J ,OSDK_E  ,0      ,0}, {"„Åò„Åá"}},
+{2,{ OSDK_J ,OSDK_O  ,0      ,0}, {"„Åò„Çá"}},
+
+{3,{ OSDK_J ,OSDK_Y  ,OSDK_A ,0}, {"„Åò„ÇÉ"} },	// „Åò„ÇÉ„Åò„ÅÉ„Åò„ÇÖ„Åò„Åá„Åò„Çá
+{3,{ OSDK_J ,OSDK_Y  ,OSDK_I ,0}, {"„Åò„ÅÉ"} },
+{3,{ OSDK_J ,OSDK_Y  ,OSDK_U ,0}, {"„Åò„ÇÖ"} },
+{3,{ OSDK_J ,OSDK_Y  ,OSDK_E ,0}, {"„Åò„Åá"} },
+{3,{ OSDK_J ,OSDK_Y  ,OSDK_O ,0}, {"„Åò„Çá"}},
+
+
+
+{2,{ OSDK_T ,OSDK_A  , 0    ,0},  {"„Åü"} },		// „Åü„Å°„Å§„Å¶„Å®
+{2,{ OSDK_T ,OSDK_I  , 0    ,0},  {"„Å°"} },
+{3,{ OSDK_C ,OSDK_H  ,OSDK_I,0},  {"„Å°"} },
+{2,{ OSDK_C ,OSDK_I  , 0    ,0},  {"„Å°"} },
+{2,{ OSDK_T ,OSDK_U  , 0    ,0},  {"„Å§"}},
+{3,{ OSDK_T ,OSDK_S  ,OSDK_U,0},  {"„Å§"} },
+{2,{ OSDK_T ,OSDK_E  , 0    ,0},  {"„Å¶"} },
+{2,{ OSDK_T ,OSDK_O  , 0    ,0},  {"„Å®"}},
+
+{3,{ OSDK_T ,OSDK_Y  ,OSDK_A  ,0}, {"„Å°„ÇÉ"}},	// „Å°„ÇÉ„Å°„ÅÉ„Å°„ÇÖ„Å°„Åá„Å°„Çá
+{3,{ OSDK_T ,OSDK_Y  ,OSDK_I  ,0}, {"„Å°„ÅÉ"}},
+{3,{ OSDK_T ,OSDK_Y  ,OSDK_U  ,0}, {"„Å°„ÇÖ"}},
+{3,{ OSDK_T ,OSDK_Y  ,OSDK_E  ,0}, {"„Å°„Åá"} },
+{3,{ OSDK_T ,OSDK_Y  ,OSDK_O  ,0}, {"„Å°„Çá"} },
+
+{ 3,{ OSDK_C ,OSDK_Y  ,OSDK_A  ,0}, {"„Å°„ÇÉ"} },	// „Å°„ÇÉ„Å°„ÅÉ„Å°„ÇÖ„Å°„Åá„Å°„Çá
+{ 3,{ OSDK_C ,OSDK_Y  ,OSDK_I  ,0}, {"„Å°„ÅÉ"} },
+{ 3,{ OSDK_C ,OSDK_Y  ,OSDK_U  ,0}, {"„Å°„ÇÖ"} },
+{ 3,{ OSDK_C ,OSDK_Y  ,OSDK_E  ,0}, {"„Å°„Åá"} },
+{ 3,{ OSDK_C ,OSDK_Y  ,OSDK_O  ,0}, {"„Å°„Çá"}},
+
+{ 3,{ OSDK_T ,OSDK_S  ,OSDK_A  ,0}, {"„Å§„ÅÅ"}},	// „Å§„ÅÅ„Å§„ÅÉ„Å§„Åá„Å§„Åâ
+{ 3,{ OSDK_T ,OSDK_S  ,OSDK_I  ,0}, {"„Å§„ÅÉ"}},
+{ 3,{ OSDK_T ,OSDK_S  ,OSDK_E  ,0}, {"„Å§„Åá"}},
+{ 3,{ OSDK_T ,OSDK_S  ,OSDK_O  ,0}, {"„Å§„Åâ"}},
+
+{ 3,{ OSDK_T ,OSDK_H  ,OSDK_A  ,0}, {"„Å¶„ÇÉ"} },	// „Å¶„ÇÉ„Å¶„ÅÉ„Å¶„ÇÖ„Å¶„Åá„Å¶„Çá
+{ 3,{ OSDK_T ,OSDK_H  ,OSDK_I  ,0}, {"„Å¶„ÅÉ"} },
+{ 3,{ OSDK_T ,OSDK_H  ,OSDK_U  ,0}, {"„Å¶„ÇÖ"} },
+{ 3,{ OSDK_T ,OSDK_H  ,OSDK_E  ,0}, {"„Å¶„Åá"} },
+{ 3,{ OSDK_T ,OSDK_H  ,OSDK_O  ,0}, {"„Å¶„Çá"}},
+
+{3,{ OSDK_T ,OSDK_W  ,OSDK_A  ,0}, {"„Å®„ÅÅ"}},	// „Å®„ÅÅ„Å®„ÅÉ„Å®„ÅÖ„Å®„Åá„Å®„Åâ
+{3,{ OSDK_T ,OSDK_W  ,OSDK_I  ,0}, {"„Å®„ÅÉ"}},
+{3,{ OSDK_T ,OSDK_W  ,OSDK_U  ,0}, {"„Å®„ÅÖ"}},
+{3,{ OSDK_T ,OSDK_W  ,OSDK_E  ,0}, {"„Å®„Åá"}},
+{3,{ OSDK_T ,OSDK_W  ,OSDK_O  ,0}, {"„Å®„Åâ"}},
+
+{2,{ OSDK_D ,OSDK_A  ,0      ,0}, {"„Å†"}},	// „Å†„Å¢„Å•„Åß„Å©
+{2,{ OSDK_D ,OSDK_I  ,0      ,0}, {"„Å¢"}},
+{2,{ OSDK_D ,OSDK_U  ,0      ,0}, {"„Å•"}},
+{2,{ OSDK_D ,OSDK_E  ,0      ,0}, {"„Åß"}},
+{2,{ OSDK_D ,OSDK_O  ,0      ,0}, {"„Å©"}},
+
+{3,{ OSDK_D ,OSDK_Y  ,OSDK_A  ,0}, {"„Å¢„ÇÉ"}},	// „Å¢„ÇÉ„Å¢„ÅÉ„Å¢„ÇÖ„Å¢„Åá„Å¢„Çá
+{3,{ OSDK_D ,OSDK_Y  ,OSDK_I  ,0}, {"„Å¢„ÅÉ"}},
+{3,{ OSDK_D ,OSDK_Y  ,OSDK_U  ,0}, {"„Å¢„ÇÖ"}},
+{3,{ OSDK_D ,OSDK_Y  ,OSDK_E  ,0}, {"„Å¢„Åá"}},
+{3,{ OSDK_D ,OSDK_Y  ,OSDK_O  ,0}, {"„Å¢„Çá"}},
 
 
             // DHA...
             // DWA...
 
-{2,{ OSDK_N ,OSDK_A  , 0    ,0}, {OSDK_U , 0,0,0}},		// Ç»Ç…Ç ÇÀÇÃ
-{2,{ OSDK_N ,OSDK_I  , 0    ,0}, {OSDK_I , 0,0,0}},
-{2,{ OSDK_N ,OSDK_U  , 0    ,0}, {OSDK_1 , 0,0,0}},
-{2,{ OSDK_N ,OSDK_E  , 0    ,0}, {OSDK_COMMA , 0,0,0}},
-{2,{ OSDK_N ,OSDK_O  , 0    ,0}, {OSDK_K , 0,0,0}},
+{2,{ OSDK_N ,OSDK_A  , 0    ,0}, {"„Å™"}},		// „Å™„Å´„Å¨„Å≠„ÅÆ
+{2,{ OSDK_N ,OSDK_I  , 0    ,0}, {"„Å´"}},
+{2,{ OSDK_N ,OSDK_U  , 0    ,0}, {"„Å¨"}},
+{2,{ OSDK_N ,OSDK_E  , 0    ,0}, {"„Å≠"}},
+{2,{ OSDK_N ,OSDK_O  , 0    ,0}, {"„ÅÆ"}},
 
-{3,{ OSDK_N ,OSDK_Y  ,OSDK_A ,0}, {OSDK_I , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç…Ç·Ç…Ç°Ç…Ç„Ç…Ç•Ç…ÇÂ
-{3,{ OSDK_N ,OSDK_Y  ,OSDK_I ,0}, {OSDK_I , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_N ,OSDK_Y  ,OSDK_U ,0}, {OSDK_I , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_N ,OSDK_Y  ,OSDK_E ,0}, {OSDK_I , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_N ,OSDK_Y  ,OSDK_O ,0}, {OSDK_I , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
+{3,{ OSDK_N ,OSDK_Y  ,OSDK_A ,0}, {"„Å´„ÇÉ"}},	// „Å´„ÇÉ„Å´„ÅÉ„Å´„ÇÖ„Å´„Åá„Å´„Çá
+{3,{ OSDK_N ,OSDK_Y  ,OSDK_I ,0}, {"„Å´„ÅÉ"}},
+{3,{ OSDK_N ,OSDK_Y  ,OSDK_U ,0}, {"„Å´„ÇÖ"}},
+{3,{ OSDK_N ,OSDK_Y  ,OSDK_E ,0}, {"„Å´„Åá"}},
+{3,{ OSDK_N ,OSDK_Y  ,OSDK_O ,0}, {"„Å´„Çá"}},
 
-{2,{ OSDK_H ,OSDK_A  , 0    ,0}, {OSDK_F , 0,0,0}},		//  ÇÕÇ–Ç”Ç÷ÇŸ
-{2,{ OSDK_H ,OSDK_I  , 0    ,0}, {OSDK_V , 0,0,0}},
-{2,{ OSDK_H ,OSDK_U  , 0    ,0}, {OSDK_2 , 0,0,0}},
-{2,{ OSDK_H ,OSDK_E  , 0    ,0}, {OSDK_UPPER , 0,0,0}},
-{2,{ OSDK_H ,OSDK_O  , 0    ,0}, {OSDK_MINUS , 0,0,0}},
+{2,{ OSDK_H ,OSDK_A  , 0    ,0}, {"„ÅØ"}},		//  „ÅØ„Å≤„Åµ„Å∏„Åª
+{2,{ OSDK_H ,OSDK_I  , 0    ,0}, {"„Å≤"}},
+{2,{ OSDK_H ,OSDK_U  , 0    ,0}, {"„Åµ"}},
+{2,{ OSDK_H ,OSDK_E  , 0    ,0}, {"„Å∏"}},
+{2,{ OSDK_H ,OSDK_O  , 0    ,0}, {"„Åª"}},
 
-{3,{ OSDK_H ,OSDK_Y  ,OSDK_A ,0}, {OSDK_V , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç–Ç·Ç–Ç°Ç–Ç„Ç–Ç•Ç–ÇÂ
-{3,{ OSDK_H ,OSDK_Y  ,OSDK_I ,0}, {OSDK_V , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_H ,OSDK_Y  ,OSDK_U ,0}, {OSDK_V , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_H ,OSDK_Y  ,OSDK_E ,0}, {OSDK_V , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_H ,OSDK_Y  ,OSDK_O ,0}, {OSDK_V , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
+{3,{ OSDK_H ,OSDK_Y  ,OSDK_A ,0}, {"„Å≤„ÇÉ"}},	// „Å≤„ÇÉ„Å≤„ÅÉ„Å≤„ÇÖ„Å≤„Åá„Å≤„Çá
+{3,{ OSDK_H ,OSDK_Y  ,OSDK_I ,0}, {"„Å≤„ÅÉ"}},
+{3,{ OSDK_H ,OSDK_Y  ,OSDK_U ,0}, {"„Å≤„ÇÖ"}},
+{3,{ OSDK_H ,OSDK_Y  ,OSDK_E ,0}, {"„Å≤„Åá"}},
+{3,{ OSDK_H ,OSDK_Y  ,OSDK_O ,0}, {"„Å≤„Çá"}},
 
-{3,{ OSDK_B ,OSDK_Y  ,OSDK_A  ,0}, {OSDK_V , OSDK_AT    ,SHIFT_DOWN, OSDK_7,SHIFT_UP}},	// Ç—Ç·Ç—Ç°Ç—Ç„Ç—Ç•Ç—ÇÂ
-{3,{ OSDK_B ,OSDK_Y  ,OSDK_I  ,0}, {OSDK_V , OSDK_AT    ,SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_B ,OSDK_Y  ,OSDK_U  ,0}, {OSDK_V , OSDK_AT    ,SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_B ,OSDK_Y  ,OSDK_E  ,0}, {OSDK_V , OSDK_AT    ,SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_B ,OSDK_Y  ,OSDK_O  ,0}, {OSDK_V , OSDK_AT    ,SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{3,{ OSDK_B ,OSDK_Y  ,OSDK_A  ,0}, {"„Å≥„ÇÉ"}},	// „Å≥„ÇÉ„Å≥„ÅÉ„Å≥„ÇÖ„Å≥„Åá„Å≥„Çá
+{3,{ OSDK_B ,OSDK_Y  ,OSDK_I  ,0}, {"„Å≥„ÅÉ"}},
+{3,{ OSDK_B ,OSDK_Y  ,OSDK_U  ,0}, {"„Å≥„ÇÖ"}},
+{3,{ OSDK_B ,OSDK_Y  ,OSDK_E  ,0}, {"„Å≥„Åá"}},
+{3,{ OSDK_B ,OSDK_Y  ,OSDK_O  ,0}, {"„Å≥„Çá"}},
 
-{3,{ OSDK_P ,OSDK_Y  ,OSDK_A ,0}, {OSDK_V , OSDK_LEFTBRACKET, SHIFT_DOWN, OSDK_7,SHIFT_UP}},// Ç“Ç·Ç“Ç°Ç“Ç„Ç“Ç•Ç“ÇÂ
-{3,{ OSDK_P ,OSDK_Y  ,OSDK_I ,0}, {OSDK_V , OSDK_LEFTBRACKET, SHIFT_DOWN, OSDK_E,SHIFT_UP}},
-{3,{ OSDK_P ,OSDK_Y  ,OSDK_U ,0}, {OSDK_V , OSDK_LEFTBRACKET, SHIFT_DOWN, OSDK_8,SHIFT_UP}},
-{3,{ OSDK_P ,OSDK_Y  ,OSDK_E ,0}, {OSDK_V , OSDK_LEFTBRACKET, SHIFT_DOWN, OSDK_5,SHIFT_UP}},
-{3,{ OSDK_P ,OSDK_Y  ,OSDK_O ,0}, {OSDK_V , OSDK_LEFTBRACKET, SHIFT_DOWN, OSDK_9,SHIFT_UP}},
+{3,{ OSDK_P ,OSDK_Y  ,OSDK_A ,0}, {"„Å¥„ÇÉ"}},    // „Å¥„ÇÉ„Å¥„ÅÉ„Å¥„ÇÖ„Å¥„Åá„Å¥„Çá
+{3,{ OSDK_P ,OSDK_Y  ,OSDK_I ,0}, {"„Å¥„ÅÉ"}},
+{3,{ OSDK_P ,OSDK_Y  ,OSDK_U ,0}, {"„Å¥„ÇÖ"}},
+{3,{ OSDK_P ,OSDK_Y  ,OSDK_E ,0}, {"„Å¥„Åá"}},
+{3,{ OSDK_P ,OSDK_Y  ,OSDK_O ,0}, {"„Å¥„Çá"}},
 
                 // FWA....
 
-{2,{ OSDK_F ,OSDK_A  , 0    ,0}, {OSDK_2 , SHIFT_DOWN ,OSDK_3,SHIFT_UP}},		//Ç”ÇüÇ”Ç°Ç”Ç”Ç•Ç”Çß
-{2,{ OSDK_F ,OSDK_I  , 0    ,0}, {OSDK_2 , SHIFT_DOWN ,OSDK_E,SHIFT_UP}},
-{2,{ OSDK_F ,OSDK_U  , 0    ,0}, {OSDK_2 , 0,0,0}},
-{2,{ OSDK_F ,OSDK_E  , 0    ,0}, {OSDK_2 , SHIFT_DOWN ,OSDK_5,SHIFT_UP}},
-{2,{ OSDK_F ,OSDK_O  , 0    ,0}, {OSDK_2 , SHIFT_DOWN ,OSDK_6,SHIFT_UP}},
+{2,{ OSDK_F ,OSDK_A  , 0     ,0}, {"„Åµ„ÅÅ"}},	//„Åµ„ÅÅ„Åµ„ÅÉ„Åµ„Åµ„Åá„Åµ„Åâ
+{2,{ OSDK_F ,OSDK_I  , 0     ,0}, {"„Åµ„ÅÉ"}},
+{2,{ OSDK_F ,OSDK_U  , 0     ,0}, {"„Åµ"}},
+{2,{ OSDK_F ,OSDK_E  , 0     ,0}, {"„Åµ„Åá"}},
+{2,{ OSDK_F ,OSDK_O  , 0     ,0}, {"„Åµ„Åâ"}},
 
 
-{2,{ OSDK_B ,OSDK_A  ,0      ,0}, {OSDK_F , OSDK_AT    , 0      , 0       }},	// ÇŒÇ—Ç‘Ç◊Ç⁄
-{2,{ OSDK_B ,OSDK_I  ,0      ,0}, {OSDK_V , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_B ,OSDK_U  ,0      ,0}, {OSDK_2 , OSDK_AT    , 0      , 0       }},
-{2,{ OSDK_B ,OSDK_E  ,0      ,0}, {OSDK_UPPER , OSDK_AT, 0      , 0       }},
-{2,{ OSDK_B ,OSDK_O  ,0      ,0}, {OSDK_MINUS , OSDK_AT, 0      , 0       }},
+{2,{ OSDK_B ,OSDK_A  ,0      ,0}, {"„Å∞"}},	// „Å∞„Å≥„Å∂„Åπ„Åº
+{2,{ OSDK_B ,OSDK_I  ,0      ,0}, {"„Å≥"}},
+{2,{ OSDK_B ,OSDK_U  ,0      ,0}, {"„Å∂"}},
+{2,{ OSDK_B ,OSDK_E  ,0      ,0}, {"„Åπ"}},
+{2,{ OSDK_B ,OSDK_O  ,0      ,0}, {"„Åº"}},
 
-{2,{ OSDK_P ,OSDK_A  ,0      ,0}, {OSDK_F , OSDK_LEFTBRACKET    , 0      , 0       }},	// ÇœÇ“Ç’ÇÿÇ€
-{2,{ OSDK_P ,OSDK_I  ,0      ,0}, {OSDK_V , OSDK_LEFTBRACKET    , 0      , 0       }},
-{2,{ OSDK_P ,OSDK_U  ,0      ,0}, {OSDK_2 , OSDK_LEFTBRACKET    , 0      , 0       }},
-{2,{ OSDK_P ,OSDK_E  ,0      ,0}, {OSDK_UPPER , OSDK_LEFTBRACKET, 0      , 0       }},
-{2,{ OSDK_P ,OSDK_O  ,0      ,0}, {OSDK_MINUS , OSDK_LEFTBRACKET, 0      , 0       }},
-
-
-{2,{ OSDK_M ,OSDK_A  , 0    ,0}, {OSDK_J , 0,0,0}},				// Ç‹Ç›ÇﬁÇﬂÇ‡
-{2,{ OSDK_M ,OSDK_I  , 0    ,0}, {OSDK_N , 0,0,0}},
-{2,{ OSDK_M ,OSDK_U  , 0    ,0}, {OSDK_RIGHTBRACKET , 0,0,0}},
-{2,{ OSDK_M ,OSDK_E  , 0    ,0}, {OSDK_SLASH , 0,0,0}},
-{2,{ OSDK_M ,OSDK_O  , 0    ,0}, {OSDK_M , 0,0,0}},
-
-{3,{ OSDK_M ,OSDK_Y  ,OSDK_A ,0}, {OSDK_N , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// Ç›Ç·Ç›Ç°Ç›Ç„Ç›Ç•Ç›ÇÂ
-{3,{ OSDK_M ,OSDK_Y  ,OSDK_I ,0}, {OSDK_N , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_M ,OSDK_Y  ,OSDK_U ,0}, {OSDK_N , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_M ,OSDK_Y  ,OSDK_E ,0}, {OSDK_N , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_M ,OSDK_Y  ,OSDK_O ,0}, {OSDK_N , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{2,{ OSDK_Y ,OSDK_A  , 0    ,0}, {OSDK_7 , 0,0,0}},				// Ç‚Ç‰ÇÊ
-{2,{ OSDK_Y ,OSDK_U  , 0    ,0}, {OSDK_8 , 0,0,0}},
-{2,{ OSDK_Y ,OSDK_O  , 0    ,0}, {OSDK_9 , 0,0,0}},
-
-{3,{ OSDK_L ,OSDK_Y  ,OSDK_A ,0}, {SHIFT_DOWN , OSDK_7 , SHIFT_UP  ,0}},	// Ç·
-{3,{ OSDK_L ,OSDK_Y  ,OSDK_U ,0}, {SHIFT_DOWN , OSDK_8 , SHIFT_UP  ,0}},	// Ç„
-{3,{ OSDK_L ,OSDK_Y  ,OSDK_O ,0}, {SHIFT_DOWN , OSDK_9 , SHIFT_UP  ,0}},	// ÇÂ
-
-{2,{ OSDK_R ,OSDK_A  , 0    ,0}, {OSDK_O , 0,0,0}},				// ÇÁÇËÇÈÇÍÇÎ
-{2,{ OSDK_R ,OSDK_I  , 0    ,0}, {OSDK_L , 0,0,0}},
-{2,{ OSDK_R ,OSDK_U  , 0    ,0}, {OSDK_PERIOD , 0,0,0}},
-{2,{ OSDK_R ,OSDK_E  , 0    ,0}, {OSDK_SEMICOLON , 0,0,0}},
-{2,{ OSDK_R ,OSDK_O  , 0    ,0}, {OSDK_UNDERSCORE , 0,0,0}},
-
-{3,{ OSDK_R ,OSDK_Y  ,OSDK_A ,0}, {OSDK_L , SHIFT_DOWN , OSDK_7 , SHIFT_UP}},	// ÇËÇ·ÇËÇ°ÇËÇ„ÇËÇ•ÇËÇÂ
-{3,{ OSDK_R ,OSDK_Y  ,OSDK_I ,0}, {OSDK_L , SHIFT_DOWN , OSDK_E , SHIFT_UP}},
-{3,{ OSDK_R ,OSDK_Y  ,OSDK_U ,0}, {OSDK_L , SHIFT_DOWN , OSDK_8 , SHIFT_UP}},
-{3,{ OSDK_R ,OSDK_Y  ,OSDK_E ,0}, {OSDK_L , SHIFT_DOWN , OSDK_5 , SHIFT_UP}},
-{3,{ OSDK_R ,OSDK_Y  ,OSDK_O ,0}, {OSDK_L , SHIFT_DOWN , OSDK_9 , SHIFT_UP}},
-
-{2,{ OSDK_W ,OSDK_A  , 0    ,0}, {OSDK_0 , 0,0,0}},				// ÇÌÇ§Ç°Ç§Ç§Ç•
-{2,{ OSDK_W ,OSDK_I  , 0    ,0}, {OSDK_4 , SHIFT_DOWN, OSDK_E, SHIFT_UP}},
-{2,{ OSDK_W ,OSDK_U  , 0    ,0}, {OSDK_4 , 0,0,0}},
-{2,{ OSDK_W ,OSDK_E  , 0    ,0}, {OSDK_4 , SHIFT_DOWN, OSDK_5, SHIFT_UP}},
+{2,{ OSDK_P ,OSDK_A  ,0      ,0}, {"„Å±"}},	// „Å±„Å¥„Å∑„Å∫„ÅΩ
+{2,{ OSDK_P ,OSDK_I  ,0      ,0}, {"„Å¥"}},
+{2,{ OSDK_P ,OSDK_U  ,0      ,0}, {"„Å∑"}},
+{2,{ OSDK_P ,OSDK_E  ,0      ,0}, {"„Å∫"}},
+{2,{ OSDK_P ,OSDK_O  ,0      ,0}, {"„ÅΩ"}},
 
 
+{2,{ OSDK_M ,OSDK_A  ,0      ,0}, {"„Åæ"}},		// „Åæ„Åø„ÇÄ„ÇÅ„ÇÇ
+{2,{ OSDK_M ,OSDK_I  ,0      ,0}, {"„Åø"}},
+{2,{ OSDK_M ,OSDK_U  ,0      ,0}, {"„ÇÄ"}},
+{2,{ OSDK_M ,OSDK_E  ,0      ,0}, {"„ÇÅ"}},
+{2,{ OSDK_M ,OSDK_O  ,0      ,0}, {"„ÇÇ"}},
 
-{1,{ OSDK_MINUS       ,0  ,0 ,0}  	, {OSDK_BACKSLASH  , 0  , 0    ,0}},	//  -
-{1,{ OSDK_BACKSLASH   ,0  ,0 ,0}  	, {OSDK_BACKSLASH  , 0  , 0    ,0}},	//  -
-{1,{ OSDK_Q           ,0  ,0 ,0}    , {0      , 0      , 0         ,0}},	// Q
-{1,{ OSDK_SEMICOLON   ,0  ,0 ,0}    , {0      , 0      , 0         ,0}},	// ;
-{1,{ OSDK_COLON       ,0  ,0 ,0}    , {0      , 0      , 0         ,0}},	// :
-{1,{ OSDK_RIGHTBRACKET,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  ]
-{1,{ OSDK_1           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  1
-{1,{ OSDK_2           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  2
-{1,{ OSDK_3           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  3
-{1,{ OSDK_4           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  4
-{1,{ OSDK_5           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  5
-{1,{ OSDK_6           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  6
-{1,{ OSDK_7           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  7
-{1,{ OSDK_8           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  8
-{1,{ OSDK_9           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  9
-{1,{ OSDK_0           ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  0
-{1,{ OSDK_UPPER       ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  ^
+{3,{ OSDK_M ,OSDK_Y  ,OSDK_A ,0}, {"„Åø„ÇÉ"}},	// „Åø„ÇÉ„Åø„ÅÉ„Åø„ÇÖ„Åø„Åá„Åø„Çá
+{3,{ OSDK_M ,OSDK_Y  ,OSDK_I ,0}, {"„Åø„ÅÉ"}},
+{3,{ OSDK_M ,OSDK_Y  ,OSDK_U ,0}, {"„Åø„ÇÖ"}},
+{3,{ OSDK_M ,OSDK_Y  ,OSDK_E ,0}, {"„Åø„Åá"}},
+{3,{ OSDK_M ,OSDK_Y  ,OSDK_O ,0}, {"„Åø„Çá"}},
 
-{1,{ OSDK_AT          ,0  ,0 ,0}  	, {OSDK_AT, 0      , 0         ,0}},	//  @ ë˜ì_
-{1,{ OSDK_LEFTBRACKET ,0  ,0 ,0}  	, {OSDK_LEFTBRACKET, 0      , 0         ,0}},	//  | îºë˜ì_
+{2,{ OSDK_Y ,OSDK_A  , 0     ,0}, {"„ÇÑ"}},				// „ÇÑ„ÇÜ„Çà
+{2,{ OSDK_Y ,OSDK_U  , 0     ,0}, {"„ÇÜ"}},
+{2,{ OSDK_Y ,OSDK_O  , 0     ,0}, {"„Çà"}},
 
-{1,{ OSDK_UPPER       ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  ^
+{3,{ OSDK_L ,OSDK_Y  ,OSDK_A ,0}, {"„ÇÉ"}},	// „ÇÉ
+{3,{ OSDK_L ,OSDK_Y  ,OSDK_U ,0}, {"„ÇÖ"}},	// „ÇÖ
+{3,{ OSDK_L ,OSDK_Y  ,OSDK_O ,0}, {"„Çá"}},	// „Çá
 
-{1,{ OSDK_COMMA       ,0  ,0 ,0}  	, {SHIFT_DOWN , OSDK_COMMA , SHIFT_UP ,0}},	//  ,
-{1,{ OSDK_PERIOD      ,0  ,0 ,0}  	, {SHIFT_DOWN , OSDK_PERIOD, SHIFT_UP ,0}},	//  .
-{1,{ OSDK_SLASH       ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  /
-{1,{ OSDK_UNDERSCORE  ,0  ,0 ,0}  	, {0      , 0      , 0         ,0}},	//  _
+{2,{ OSDK_R ,OSDK_A  , 0     ,0}, {"„Çâ"}},				// „Çâ„Çä„Çã„Çå„Çç
+{2,{ OSDK_R ,OSDK_I  , 0     ,0}, {"„Çä"}},
+{2,{ OSDK_R ,OSDK_U  , 0     ,0}, {"„Çã"}},
+{2,{ OSDK_R ,OSDK_E  , 0     ,0}, {"„Çå"}},
+{2,{ OSDK_R ,OSDK_O  , 0     ,0}, {"„Çç"}},
 
-                                                                // ÇÇÒ
-{ 2,{ OSDK_W ,OSDK_O  , 0    ,0}, {SHIFT_DOWN , OSDK_0 , SHIFT_UP , 0} },
-{ 2,{ OSDK_N ,OSDK_N  , 0    ,0}, {OSDK_Y , 0,0,0} },
-{ 3,{ OSDK_N ,OSDK_N  ,OSDK_N,0}, {OSDK_Y , 0,0,0} },
+{3,{ OSDK_R ,OSDK_Y  ,OSDK_A ,0}, {"„Çä„ÇÉ"}},	// „Çä„ÇÉ„Çä„ÅÉ„Çä„ÇÖ„Çä„Åá„Çä„Çá
+{3,{ OSDK_R ,OSDK_Y  ,OSDK_I ,0}, {"„Çä„ÅÉ"}},
+{3,{ OSDK_R ,OSDK_Y  ,OSDK_U ,0}, {"„Çä„ÇÖ"}},
+{3,{ OSDK_R ,OSDK_Y  ,OSDK_E ,0}, {"„Çä„Åá"}},
+{3,{ OSDK_R ,OSDK_Y  ,OSDK_O ,0}, {"„Çä„Çá"}},
+
+{2,{ OSDK_W ,OSDK_A  , 0    ,0}, {"„Çè"}},				// „Çè„ÅÜ„ÅÉ„ÅÜ„ÅÜ„Åá
+{2,{ OSDK_W ,OSDK_I  , 0    ,0}, {"„ÅÜ„ÅÉ"}},
+{2,{ OSDK_W ,OSDK_U  , 0    ,0}, {"„ÅÜ"}},
+{2,{ OSDK_W ,OSDK_E  , 0    ,0}, {"„ÅÜ„Åá"}},
+
+
+
+{1,{ OSDK_MINUS       ,0  ,0 ,0}  	, {"„Éº"}},	//  -
+{1,{ OSDK_BACKSLASH   ,0  ,0 ,0}  	, {""}},	//  -
+{1,{ OSDK_Q           ,0  ,0 ,0}    , {"Ôº±"}},	// Q
+{1,{ OSDK_SEMICOLON   ,0  ,0 ,0}    , {"Ôºõ"}},	// ;
+{1,{ OSDK_COLON       ,0  ,0 ,0}    , {"Ôºö"}},	// :
+{1,{ OSDK_RIGHTBRACKET,0  ,0 ,0}  	, {""}},	//  ]
+{1,{ OSDK_1           ,0  ,0 ,0}  	, {"Ôºë"}},	//  1
+{1,{ OSDK_2           ,0  ,0 ,0}  	, {"Ôºí"}},	//  2
+{1,{ OSDK_3           ,0  ,0 ,0}  	, {"Ôºì"}},	//  3
+{1,{ OSDK_4           ,0  ,0 ,0}  	, {"Ôºî"}},	//  4
+{1,{ OSDK_5           ,0  ,0 ,0}  	, {"Ôºï"}},	//  5
+{1,{ OSDK_6           ,0  ,0 ,0}  	, {"Ôºñ"}},	//  6
+{1,{ OSDK_7           ,0  ,0 ,0}  	, {"Ôºó"}},	//  7
+{1,{ OSDK_8           ,0  ,0 ,0}  	, {"Ôºò"}},	//  8
+{1,{ OSDK_9           ,0  ,0 ,0}  	, {"Ôºô"}},	//  9
+{1,{ OSDK_0           ,0  ,0 ,0}  	, {"Ôºê"}},	//  0
+{1,{ OSDK_UPPER       ,0  ,0 ,0}  	, {"Ôºæ"}},	//  ^
+
+{1,{ OSDK_AT          ,0  ,0 ,0}  	, {"„Çõ"}},	//  @ ÊøÅÁÇπ
+{1,{ OSDK_LEFTBRACKET ,0  ,0 ,0}  	, {"„Çú"}},	//  | ÂçäÊøÅÁÇπ
+
+{1,{ OSDK_UPPER       ,0  ,0 ,0}  	, {"Ôºæ"}},	//  ^
+
+{1,{ OSDK_COMMA       ,0  ,0 ,0}  	, {"„ÄÅ"}},	//  ,
+{1,{ OSDK_PERIOD      ,0  ,0 ,0}  	, {"„ÄÇ"}},	//  .
+{1,{ OSDK_SLASH       ,0  ,0 ,0}  	, {"Ôºè"}},	//  /
+{1,{ OSDK_UNDERSCORE  ,0  ,0 ,0}  	, {"Ôºø"}},	//  _
+
+                                                                // „Çí„Çì
+{ 2,{ OSDK_W ,OSDK_O  , 0    ,0}    , {"„Çí"} },
+{ 2,{ OSDK_N ,OSDK_N  , 0    ,0}    , {"„Çì"} },
+{ 3,{ OSDK_N ,OSDK_N  ,OSDK_N,0}    , {"„Çì"} },
 
 {-1,{ -1     ,-1      , -1   },{-1  , 0,0,0}},
 
@@ -345,142 +345,9 @@ static struct _romaji_tbl romaji_tbl[] = {
 
 
 
-
-
 // ****************************************************************************
-//      ÉeÉLÉXÉgÉtÉ@ÉCÉãÇ©ÇÁé©ìÆì¸óÕïœä∑ÉeÅ[ÉuÉã
-// ****************************************************************************
-static struct _romaji_tbl  text_tbl[] = {
-{ 1,{ 0x21   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_1 , SHIFT_UP ,0 }},	//  !
-{ 1,{ 0x22   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_2 , SHIFT_UP ,0 } },//  "
-{ 1,{ 0x23   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_3 , SHIFT_UP ,0 } },//  #
-{ 1,{ 0x24   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_4 , SHIFT_UP ,0 } },//  $
-{ 1,{ 0x25   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_5 , SHIFT_UP ,0 } },//  %
-{ 1,{ 0x26   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_6 , SHIFT_UP ,0 } },//  &
-{ 1,{ 0x27   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_7 , SHIFT_UP ,0 } },//  '
-{ 1,{ 0x28   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_8 , SHIFT_UP ,0 } },//  (
-{ 1,{ 0x29   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_9 , SHIFT_UP ,0 } },//  )
-{ 1,{ 0x2a   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_COLON    , SHIFT_UP ,0 } },//  *
-{ 1,{ 0x2b   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_SEMICOLON , SHIFT_UP ,0 } },//  +
-
-{ 1,{ 0x2b   ,0  ,0 ,0 },{ SHIFT_DOWN , OSDK_SEMICOLON , SHIFT_UP ,0 } },//  +
-
-{ 2,{ 0x82   ,0xa0 ,0 ,0 },{OSDK_KANA , OSDK_3 , OSDK_KANA } },//  Ç†
-{ 2,{ 0x82   ,0xa2 ,0 ,0 },{OSDK_KANA , OSDK_E , OSDK_KANA } },//  Ç¢
-{ 2,{ 0x82   ,0xa4 ,0 ,0 },{ OSDK_KANA , OSDK_4 , OSDK_KANA } },//  Ç§
-{ 2,{ 0x82   ,0xa6 ,0 ,0 },{ OSDK_KANA , OSDK_5 , OSDK_KANA } },//  Ç¶
-{ 2,{ 0x82   ,0xa8 ,0 ,0 },{ OSDK_KANA , OSDK_6 , OSDK_KANA } },//  Ç®
-
-{ 2,{ 0x82   ,0x9f ,0 ,0 },{ OSDK_KANA , SHIFT_DOWN, OSDK_3 , SHIFT_UP,OSDK_KANA } },//  Çü
-{ 2,{ 0x82   ,0xa1 ,0 ,0 },{ OSDK_KANA , SHIFT_DOWN, OSDK_E , SHIFT_UP,OSDK_KANA } },//  Ç°
-{ 2,{ 0x82   ,0xa3 ,0 ,0 },{ OSDK_KANA , SHIFT_DOWN, OSDK_4 , SHIFT_UP,OSDK_KANA } },//  Ç£
-{ 2,{ 0x82   ,0xa5 ,0 ,0 },{ OSDK_KANA , SHIFT_DOWN, OSDK_5 , SHIFT_UP,OSDK_KANA } },//  Ç•
-{ 2,{ 0x82   ,0xa7 ,0 ,0 },{ OSDK_KANA , SHIFT_DOWN, OSDK_6 , SHIFT_UP,OSDK_KANA } },//  Çß
-
-
-{ 2,{ 0x82   ,0xa9 ,0 ,0 },{ OSDK_KANA , OSDK_T, OSDK_KANA } },    //  Ç©
-{ 2,{ 0x82   ,0xab ,0 ,0 },{ OSDK_KANA , OSDK_G , OSDK_KANA } },   //  Ç´
-{ 2,{ 0x82   ,0xad ,0 ,0 },{ OSDK_KANA , OSDK_H , OSDK_KANA } },   //  Ç≠
-{ 2,{ 0x82   ,0xaf ,0 ,0 },{ OSDK_KANA , OSDK_COLON , OSDK_KANA } },//  ÇØ
-{ 2,{ 0x82   ,0xb1 ,0 ,0 },{ OSDK_KANA , OSDK_B , OSDK_KANA } },   //  Ç±
-{ -1,{ -1} ,{-1}},
-};
-
-
-// ****************************************************************************
-//		ÉeÉLÉXÉgÉtÉ@ÉCÉãÇ©ÇÁÅAé©ìÆì¸óÕópïœä∑Ç÷
-// ****************************************************************************
-int convert_text(char *buff)
-{
-	int num;
-	int found = 0;
-	int i=0;
-	while (1)
-	{
-		int k = 0;
-		num = text_tbl[i].num;
-		if (num == -1) break;
-
-		if ((num == 1 && text_tbl[i].romaji[0] == buff[0]) ||
-			(num == 2 && text_tbl[i].romaji[0] == buff[0] && text_tbl[i].romaji[1] == buff[1]))
-		{
-			do
-			{
-				if (text_tbl[i].keycode[k] == SHIFT_DOWN)
-					write_keybuffer(auto_keybuffer, 0, KEYDOWN, 0, OSDK_SHIFT);	// key down
-				else if (text_tbl[i].keycode[k] == SHIFT_UP)
-					write_keybuffer(auto_keybuffer, 0, KEYUP, 0, OSDK_SHIFT);	// key up
-				else
-					write_keybuffer(auto_keybuffer, 0, KEYDOWN, 0, text_tbl[i].keycode[k]);	// key down
-				k++;
-			} while (text_tbl[i].keycode[k]);
-			found = 1;
-			break;
-		}
-		i++;
-	}
-
-	if (!found)		// å©Ç¬Ç©ÇÁÇ»Ç©Ç¡ÇΩÇÁÅAÇªÇÃÇ‹Ç‹èëÇ´çûÇﬁ
-	{
-		write_keybuffer(auto_keybuffer, 0, KEYDOWN, 0, *buff);	// key down
-		write_keybuffer(auto_keybuffer, 0, KEYUP, 0, *buff);	// key up
-		num = 1;
-	}
-
-	return num;
-}
-
-
-
-// ****************************************************************************
-// autokeyÇ…ìoò^
-// ****************************************************************************
-int register_autokey(char *buff)
-{
-	int  cnt;
-	char *p;
-
-	if (!Event_isActive(EVENT_KEYIN))
-	{
-		p = buff;
-		for (int i = 0; i < strlen(buff); i++)
-		{
-			cnt = convert_text(p);
-			p += cnt;
-		}
-		if (!Event_Add(EVENT_KEYIN, 200, EV_LOOP | EV_MS, autokeyin_func))  return 0;
-
-	}
-}
-
-
-// ****************************************************************************
-// autokeyin_func 
-//    ÉçÅ[É}éöïœä∑Ç…ê¨å˜ÇµÇΩÇ∆Ç´Ç…ÅAÉLÅ[ÉoÉbÉtÉ@Ç…èëÇ´çûÇÒÇ≈ÅAâüÇµÇΩÇ±Ç∆Ç…Ç∑ÇÈÅ@ÉRÅ[ÉãÉoÉbÉNä÷êî
-// ****************************************************************************
-void autokeyin_func(void)
-{
-    int keydown;
-    int scancode;
-    int osdkeycode;
-    if( read_keybuffer( auto_keybuffer ,0 ,&keydown , &scancode ,&osdkeycode) )
-        {
-		if (osdkeycode == OSDK_KANA)
-			DoOut(0x90, 4);		// Ç©Ç»ÉLÅ[êÿÇËë÷Ç¶
-		else
-			write_keybuffer( keybuffer, 0, keydown , scancode , osdkeycode);
-        }
-    else
-        {
-         Event_Del( EVENT_KEYIN);		// ç≈å„Ç‹Ç≈çsÇ¡ÇΩÇÁÅAÉXÉPÉWÉÖÅ[ÉãÉCÉxÉìÉgîjä¸
-        }
-}
-
-
-
-// ****************************************************************************
-// Å@ïÍâπÇ©Ç«Ç§Ç©ÅH
-// îÒ0  :ÇÕÇ¢    0:Ç¢Ç¢Ç¶
+// „ÄÄÊØçÈü≥„Åã„Å©„ÅÜ„ÅãÔºü
+// Èùû0  :„ÅØ„ÅÑ    0:„ÅÑ„ÅÑ„Åà
 // ****************************************************************************
 int isBoin( int osdkeycode)
 {
@@ -488,8 +355,8 @@ int isBoin( int osdkeycode)
 }
 
 // ****************************************************************************
-// Å@éqâπÇ©Ç«Ç§Ç©ÅH
-// îÒ0  :ÇÕÇ¢    0:Ç¢Ç¢Ç¶
+// „ÄÄÂ≠êÈü≥„Åã„Å©„ÅÜ„ÅãÔºü
+// Èùû0  :„ÅØ„ÅÑ    0:„ÅÑ„ÅÑ„Åà
 // ****************************************************************************
 int isShin( int osdkeycode)
 {
@@ -499,15 +366,15 @@ int isShin( int osdkeycode)
 }
 
 // ****************************************************************************
-// 		convert_search:ÉçÅ[É}éöÇÃí‘ÇËÇÉ}ÉbÉ`ÉìÉOÇ∑ÇÈ (convert_romaji2kana Ç©ÇÁåƒÇŒÇÍÇÈ)
+// 		convert_search:„É≠„Éº„ÉûÂ≠ó„ÅÆÁ∂¥„Çä„Çí„Éû„ÉÉ„ÉÅ„É≥„Ç∞„Åô„Çã (convert_romaji2kana „Åã„ÇâÂëº„Å∞„Çå„Çã)
 //
-//   In:  buff    ïœä∑ÇµÇΩÇ¢ï∂éöóÒ
-//        line    ïœä∑åãâ (romaji_tbl ÉeÅ[ÉuÉãÇÃÉCÉìÉfÉbÉNÉX)
+//   In:  buff    Â§âÊèõ„Åó„Åü„ÅÑÊñáÂ≠óÂàó
+//        line    Â§âÊèõÁµêÊûú(romaji_tbl „ÉÜ„Éº„Éñ„É´„ÅÆ„Ç§„É≥„Éá„ÉÉ„ÇØ„Çπ)
 //
-//   Out: HENKAN_SUCCESS   ïœä∑ê¨å˜
-//        HENKAN_DOING     ïœä∑íÜ
-//        HENKAN_FAILED    ïœä∑é∏îs
-//        HENKAN_SUCCESS_LTU Ç¡ïœä∑ê¨å˜
+//   Out: HENKAN_SUCCESS   Â§âÊèõÊàêÂäü
+//        HENKAN_DOING     Â§âÊèõ‰∏≠
+//        HENKAN_FAILED    Â§âÊèõÂ§±Êïó
+//        HENKAN_SUCCESS_LTU „Å£Â§âÊèõÊàêÂäü
 // ****************************************************************************
 int convert_search( char *buff , int *line)
 {
@@ -516,7 +383,7 @@ int convert_search( char *buff , int *line)
 
     *line = 0;
     
-    if( buff[0]== buff[1])				// éqâπÇ™èdÇ»Ç¡Çƒì¸óÕÇ≥ÇÍÇΩÇÁÅAÇ¡Ç…ïœä∑
+    if( buff[0]== buff[1])				// Â≠êÈü≥„ÅåÈáç„Å™„Å£„Å¶ÂÖ•Âäõ„Åï„Çå„Åü„Çâ„ÄÅ„Å£„Å´Â§âÊèõ
         if( isShin( buff[0]) && isShin(buff[1]))
             {
              return HENKAN_SUCCESS_LTU;
@@ -545,19 +412,19 @@ int convert_search( char *buff , int *line)
 
 // ****************************************************************************
 // 		convert_romaji2kana:
-//		ÉçÅ[É}éöÇ©ÇÁÅAÇ©Ç»Ç…ïœä∑Ç∑ÇÈ
+//		„É≠„Éº„ÉûÂ≠ó„Åã„Çâ„ÄÅ„Åã„Å™„Å´Â§âÊèõ„Åô„Çã
 //
-//  OSÉLÅ[ÉCÉxÉìÉgÇÃkeydown ÇÃÇ∆Ç±ÇÎÇ≈ÅAÇ©Ç»ÉÇÅ[ÉhÇ©Ç¬ÅAÉçÅ[É}éöïœä∑ÉÇÅ[ÉhÇ»ÇÁÅAÇ±ÇÍÇåƒÇ‘ÅB
-//
-//
-//	èàóùÅFÉçÅ[É}éöïœä∑Ç≈Ç´ÇÈÇ©É`ÉFÉbÉNÇµÇƒÅAïœä∑Ç…ê¨å˜ÇµÇΩÇÁÅAÉLÅ[ì¸óÕÇ∑ÇÈÇÊÇ§Ç…ÅAÉXÉPÉWÉÖÅ[ÉãÇ…ìoò^Ç∑ÇÈÅB
+//  OS„Ç≠„Éº„Ç§„Éô„É≥„Éà„ÅÆkeydown „ÅÆ„Å®„Åì„Çç„Åß„ÄÅ„Åã„Å™„É¢„Éº„Éâ„Åã„Å§„ÄÅ„É≠„Éº„ÉûÂ≠óÂ§âÊèõ„É¢„Éº„Éâ„Å™„Çâ„ÄÅ„Åì„Çå„ÇíÂëº„Å∂„ÄÇ
 //
 //
-// Out: HENKAN_SUCCESS: ÉçÅ[É}éöïœä∑ÇµÇΩÅAÉLÅ[ì¸óÕÇ∑ÇÈÇÊÇ§Ç…ÅAÉXÉPÉWÉÖÅ[ÉãÇ…ìoò^ÇµÇΩ
-//      HENKAN_FAILED:  ïœä∑é∏îs
-//      HENKAN_DOING  : ïœä∑íÜ
-//      HENKAN_CANCEL : ñ≥ïœä∑
-//      HENKAN_SUCCESS_LTU Ç¡ïœä∑ê¨å˜
+//	Âá¶ÁêÜÔºö„É≠„Éº„ÉûÂ≠óÂ§âÊèõ„Åß„Åç„Çã„Åã„ÉÅ„Çß„ÉÉ„ÇØ„Åó„Å¶„ÄÅÂ§âÊèõ„Å´ÊàêÂäü„Åó„Åü„Çâ„ÄÅ„Ç≠„ÉºÂÖ•Âäõ„Åô„Çã„Çà„ÅÜ„Å´„ÄÅ„Çπ„Ç±„Ç∏„É•„Éº„É´„Å´ÁôªÈå≤„Åô„Çã„ÄÇ
+//
+//
+// Out: HENKAN_SUCCESS: „É≠„Éº„ÉûÂ≠óÂ§âÊèõ„Åó„Åü„ÄÅ„Ç≠„ÉºÂÖ•Âäõ„Åô„Çã„Çà„ÅÜ„Å´„ÄÅ„Çπ„Ç±„Ç∏„É•„Éº„É´„Å´ÁôªÈå≤„Åó„Åü
+//      HENKAN_FAILED:  Â§âÊèõÂ§±Êïó
+//      HENKAN_DOING  : Â§âÊèõ‰∏≠
+//      HENKAN_CANCEL : ÁÑ°Â§âÊèõ
+//      HENKAN_SUCCESS_LTU „Å£Â§âÊèõÊàêÂäü
 //***************************************************************
 int convert_romaji2kana( int osdkeycode )
 {
@@ -570,8 +437,9 @@ int convert_romaji2kana( int osdkeycode )
 
 
     if(  osdkeycode < 0x20 || osdkeycode == OSDK_LEFT || osdkeycode == OSDK_RIGHT || osdkeycode== OSDK_UP
-       || osdkeycode== OSDK_DOWN || osdkeycode==OSDK_SCROLLOCK || osdkeycode == OSDK_PAGEUP || osdkeycode == OSDK_PAGEDOWN
-		|| (osdkeycode >= OSDK_F1 && osdkeycode <= OSDK_F5))
+       || osdkeycode== OSDK_DOWN || osdkeycode==OSDK_SCROLLOCK || osdkeycode == OSDK_PAGEUP 
+        || osdkeycode == OSDK_PAGEDOWN|| (osdkeycode >= OSDK_F1 && osdkeycode <= OSDK_F10) || osdkeycode==OSDK_END 
+        || osdkeycode ==OSDK_SHIFT || osdkeycode == OSDK_ALT || osdkeycode == OSDK_SPACE)
         {
         idx=0;
         memset(buff,0, sizeof(buff));
@@ -582,7 +450,7 @@ int convert_romaji2kana( int osdkeycode )
         {
          buff[ idx++ ]= osdkeycode;
 
-         found = convert_search( buff , &line);	// convert to romaji ÉçÅ[É}éöïœä∑ÇµÇƒÇ›ÇÈ
+         found = convert_search( buff , &line);	// convert to romaji „É≠„Éº„ÉûÂ≠óÂ§âÊèõ„Åó„Å¶„Åø„Çã
 
          PRINTDEBUG1(KEY_LOG,"[P6][convert_romaji2kana] input buff= '%s' \n ", buff);
 
@@ -598,48 +466,23 @@ int convert_romaji2kana( int osdkeycode )
             int output_length=0;
 
             if( found == HENKAN_SUCCESS_LTU)
-                line =0;        // éqâπÇ™É_ÉuÉãÇ≈óàÇΩÇ∆Ç´ÇÕÅAã≠êßìIÇ…ÅAÅuÇ¡ÅvÇ…ïœä∑Ç∑ÇÈ
+                line =0;        // Â≠êÈü≥„Åå„ÉÄ„Éñ„É´„ÅßÊù•„Åü„Å®„Åç„ÅØ„ÄÅÂº∑Âà∂ÁöÑ„Å´„ÄÅ„Äå„Å£„Äç„Å´Â§âÊèõ„Åô„Çã
 
             PRINTDEBUG1(KEY_LOG,"[P6][convert_romaji2kana] convert_success '%s' -> ",buff);
 
-                    // ÉLÅ[ì¸óÕÉXÉPÉWÉÖÅ[ÉãÇ…Ç©Ç¶ÇÈÇ±Ç∆ÅBä‘äuÇäJÇØÇΩÉRÅ[ÉãÉoÉbÉNÇ≈ÅAwrite_keybuffer ÇÇPÇ¬Ç√Ç¬åƒÇ‘ÇÊÇ§Ç…Ç∑ÇÈÅB
-                    // ÉLÅ[ì¸óÕÉXÉPÉWÉÖÅ[Éãî≠ê∂íÜÇ…ÅAOSÇÃÉLÅ[ÉCÉxÉìÉgÇ™Ç´ÇΩÇÁÅAïœä∑èoóàÇÈèÍçáÇÕÅAïœä∑ÇµÇƒÅA
-                    // 2Ç¬Çﬂà»ç~ÇÃÉLÅ[ì¸óÕÉXÉPÉWÉÖÅ[ÉãÇÉLÉÖÅ[Ç…ìoò^Ç∑ÇÈ
 
-            for(j=0 ; j< 5 ; j++)
-                {
-                 int c = romaji_tbl[ line ].keycode[j];
-                 switch(c)
-                    {
-                     case SHIFT_DOWN:
-                            write_keybuffer( auto_keybuffer, 0 , KEYDOWN , 0 , OSDK_SHIFT);	// shift key down
-                            PRINTDEBUG(KEY_LOG,"[SHIFT DOWN]");
-                            break;
-                     case SHIFT_UP:
-                            write_keybuffer( auto_keybuffer, 0 , KEYUP   , 0 , OSDK_SHIFT);	// shift key down
-                            PRINTDEBUG(KEY_LOG,"[SHIFT UP]");
-                            break;
-                     case 0: j=100;		// exit loop
-                            break;
-                     default:
-                            PRINTDEBUG2(KEY_LOG,"['%c'(%02X)]",c,c);
-                            write_keybuffer( auto_keybuffer, 0 , KEYDOWN , 0 , c);	// key down
-                            write_keybuffer( auto_keybuffer, 0 , KEYUP   , 0 , c);	// key up
-                            break;
-
-                    }
-                }
+           {
+            char tmp[10];
+            convertSjis2p6( romaji_tbl[line].keycode, tmp);  // convert shift JIS -> P6 code
+            putAutokeyMessage( tmp);                         // register autokey
+           }
 
 
 
             PRINTDEBUG(KEY_LOG,"\n");
-
-            if( !Event_isActive( EVENT_KEYIN))
-                if( !Event_Add( EVENT_KEYIN, 100, EV_LOOP|EV_MS , autokeyin_func) )  return 0;  // é©ìÆÉLÅ[ì¸óÕÇìoò^Ç∑ÇÈ
-
             //if( !saihenkan_flag) {idx =0;	memset( buff , 0,  sizeof( buff));}
             //saihenkan_flag=0;
-            if (found == HENKAN_SUCCESS_LTU)        // éqâπÉ_ÉuÉãÇ≈Ç´ÇΩÇ∆Ç´Åió·Ç¶ÇŒÅAKKÇÃÇ∆Ç´ÇÕÅAKK -> K Ç…ÇµÇƒÅAéüÇÃïÍâπÇë“Ç¬
+            if (found == HENKAN_SUCCESS_LTU)        // Â≠êÈü≥„ÉÄ„Éñ„É´„Åß„Åç„Åü„Å®„ÅçÔºà‰æã„Åà„Å∞„ÄÅKK„ÅÆ„Å®„Åç„ÅØ„ÄÅKK -> K „Å´„Åó„Å¶„ÄÅÊ¨°„ÅÆÊØçÈü≥„ÇíÂæÖ„Å§
                 {
                  buff[0]= buff[1]; buff[1] = buff[2]; buff[2]= buff[3]; buff[3]=0;
                  idx--;
@@ -656,7 +499,7 @@ int convert_romaji2kana( int osdkeycode )
             }
         }
 
-    if( found ==HENKAN_FAILED)	// Ç©Ç»ïœä∑ÉLÅ[à»äOÇÕÅAÇªÇÃÇ‹Ç‹ï‘Ç∑ÅB
+    if( found ==HENKAN_FAILED)	// „Åã„Å™Â§âÊèõ„Ç≠„Éº‰ª•Â§ñ„ÅØ„ÄÅ„Åù„ÅÆ„Åæ„ÅæËøî„Åô„ÄÇ
         {
          idx=0;
          memset( buff, 0,  sizeof( buff));
@@ -664,25 +507,3 @@ int convert_romaji2kana( int osdkeycode )
     return found;
 }
 
-
-
-
-#if 0
-    // ****** kana mode  converter ********
-    if( kanaMode && convert_length==0)
-        {
-        if( sense_keybuffer( NULL ,&keydown , &scancode ,&osdkeycode) )
-            if( keydown )
-                {
-                int ret;
-                convert_length = convert_romaji2kana( osdkeycode);	// convert romaji -> kana
-                printf("convert_length %d \n ", convert_length);
-                }
-        }
-    else if( convert_length >0){			// henkan auto key
-             if( ++convert_counter < 50 /* 50 60 80 150*/) return; else convert_counter =0;	// thru  n times
-             --convert_length;
-             usleep(10000*1.2);
-            printf("convert_length %d \n", convert_length);
-        }
-#endif
